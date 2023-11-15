@@ -46,7 +46,7 @@ const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 // Top section
-function NavBar() {
+function NavBar({ movies }) {
     const [query, setQuery] = useState("");
 
     return (
@@ -63,25 +63,24 @@ function NavBar() {
                 onChange={(e) => setQuery(e.target.value)}
             />
             <p className="num-results">
-                Found <strong>x</strong> results
+                Found <strong>{movies.length}</strong> results
             </p>
         </nav>
     );
 }
 
 // main Page section
-function Main() {
+function Main({ movies }) {
     return (
         <main className="main">
-            <MoviesListBox />
+            <MoviesListBox movies={movies} />
             <WatchedMoviesBox />
         </main>
     );
 }
 
 // Left section
-function MoviesListBox() {
-    const [movies, setMovies] = useState(tempMovieData);
+function MoviesListBox({ movies }) {
     const [isOpen1, setIsOpen1] = useState(true);
 
     return (
@@ -209,10 +208,12 @@ function WatchedMovie({ movie }) {
 }
 
 export default function App() {
+    const [movies, setMovies] = useState(tempMovieData);
+
     return (
         <>
-            <NavBar />
-            <Main />
+            <NavBar movies={movies} />
+            <Main movies={movies} />
         </>
     );
 }
