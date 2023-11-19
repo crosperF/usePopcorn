@@ -46,41 +46,38 @@ const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 // Top section
-function NavBar({ movies }) {
+function SearchBar() {
     const [query, setQuery] = useState("");
+    return (
+        <input
+            className="search"
+            type="text"
+            placeholder="Search movies..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+        />
+    );
+}
 
+function NavBar({ children }) {
     return (
         <nav className="nav-bar">
             <div className="logo">
                 <span role="img">🍿</span>
                 <h1>usePopcorn</h1>
             </div>
-            <input
-                className="search"
-                type="text"
-                placeholder="Search movies..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-            />
-            <p className="num-results">
-                Found <strong>{movies.length}</strong> results
-            </p>
+            {children}
         </nav>
     );
 }
 
 // main Page section
-function Main({ movies }) {
-    return (
-        <main className="main">
-            <MoviesListBox movies={movies} />
-            <WatchedMoviesBox />
-        </main>
-    );
+function Main({ children }) {
+    return <main className="main">{children}</main>;
 }
 
 // Left section
-function MoviesListBox({ movies }) {
+function MoviesListBox({ children }) {
     const [isOpen1, setIsOpen1] = useState(true);
 
     return (
@@ -91,7 +88,7 @@ function MoviesListBox({ movies }) {
             >
                 {isOpen1 ? "–" : "+"}
             </button>
-            {isOpen1 && <MoviesList movies={movies} />}
+            {isOpen1 && children}
         </div>
     );
 }
@@ -212,8 +209,19 @@ export default function App() {
 
     return (
         <>
-            <NavBar movies={movies} />
-            <Main movies={movies} />
+            <NavBar>
+                <SearchBar />
+                <p className="num-results">
+                    Found <strong>{movies.length}</strong> results
+                </p>
+            </NavBar>
+
+            <Main>
+                <MoviesListBox>
+                    <MoviesList movies={movies} />
+                </MoviesListBox>
+                <WatchedMoviesBox />
+            </Main>
         </>
     );
 }
