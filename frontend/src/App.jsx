@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { key } from "./key";
+import StarRating from "./StarRating";
 
 const tempWatchedData = [
     {
@@ -220,6 +221,9 @@ function SelectedMovie({ movieID, onBackClick }) {
                 </div>
             </header>
             <section>
+                <div className="rating">
+                    <StarRating maxRating={10} size={24} onSetRating={() => {}} />
+                </div>
                 <p>
                     <em>{plot}</em>
                 </p>
