@@ -1,27 +1,6 @@
 import { useEffect, useState } from "react";
 import { key } from "./key";
 
-const tempMovieData = [
-    {
-        imdbID: "tt1375666",
-        Title: "Inception",
-        Year: "2010",
-        Poster: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-    },
-    {
-        imdbID: "tt0133093",
-        Title: "The Matrix",
-        Year: "1999",
-        Poster: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
-    },
-    {
-        imdbID: "tt6751668",
-        Title: "Parasite",
-        Year: "2019",
-        Poster: "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
-    },
-];
-
 const tempWatchedData = [
     {
         imdbID: "tt1375666",
@@ -94,19 +73,23 @@ function ListBox({ children }) {
     );
 }
 
-function MoviesList({ movies }) {
+function MoviesList({ movies, onSelectMovie }) {
     return (
-        <ul className="list">
+        <ul className="list list-movies">
             {movies?.map((movie) => (
-                <Movie movie={movie} key={movie.imdbID} />
+                <Movie
+                    movie={movie}
+                    key={movie.imdbID}
+                    onSelectMovie={onSelectMovie}
+                />
             ))}
         </ul>
     );
 }
 
-function Movie({ movie }) {
+function Movie({ movie, onSelectMovie }) {
     return (
-        <li key={movie.imdbID}>
+        <li key={movie.imdbID} onClick={() => onSelectMovie(movie.imdbID)}>
             <img src={movie.Poster} alt={`${movie.Title} poster`} />
             <h3>{movie.Title}</h3>
             <div>
@@ -183,15 +166,77 @@ function WatchedMovie({ movie }) {
     );
 }
 
+function SelectedMovie({ movieID, onBackClick }) {
+    const [movie, setMovie] = useState({});
+    const [loading, setLoading] = useState(false);
+
+    const {
+        Actors: actors,
+        Plot: plot,
+        imdbRating: imdbRating,
+        Year: year,
+        Genre: genre,
+        Director: director,
+        Poster: poster,
+        Title: title,
+        Released: released,
+        Runtime: runtime,
+    } = movie;
+
+    useEffect(() => {
+        async function fetchMovieDetail(id) {
+            setLoading(true);
+            let res = await fetch(
+                `http://www.omdbapi.com/?apikey=${key}&i=${id}`
+            );
+            let data = await res.json();
+            console.log(data);
+            setMovie(data);
+            setLoading(false);
+        }
+        fetchMovieDetail(movieID);
+    }, [movieID]); // that is when the incoming prop changes we should also fetch the data
+    // not only on mount
+
+    return loading ? (
+        <h2 className="loader">Loading...</h2>
+    ) : (
+        <div className="details">
+            <header>
+                <button
+                    className="btn-back"
+                    onClick={() => onBackClick(movieID)}
+                >
+                    &larr;
+                </button>
+                <img src={poster} alt={"poster for " + title} />
+                <div className="details-overview">
+                    <h2>{title}</h2>
+                    <p>
+                        {released} &bull; {runtime}
+                    </p>
+                    <p>{genre}</p>
+                    <p>IMDb Rating ⭐ {imdbRating}</p>
+                </div>
+            </header>
+            <section>
+                <p>
+                    <em>{plot}</em>
+                </p>
+                <p>Starring {actors}</p>
+                <p>Directed by {director}</p>
+            </section>
+        </div>
+    );
+}
+
 export default function App() {
     const [movies, setMovies] = useState([]);
     const [watched, setWatched] = useState(tempWatchedData);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const [query, setQuery] = useState("");
-    // useEffect(() => {
-    //     console.log("use effect called");
-    // }, [query]);
+    const [query, setQuery] = useState("wars");
+    const [selectedMovieID, setSelectedMovieID] = useState(null);
 
     useEffect(() => {
         async function fetchMovies() {
@@ -203,11 +248,12 @@ export default function App() {
                     `http://www.omdbapi.com/?apikey=${key}&s=${query}`
                 );
                 let data = await res.json();
-                if (data.length == 0) {
+
+                if (data["Response"] == "False") {
                     setMovies([]);
                     throw new Error("no movies available");
                 }
-                // console.log(data);
+                console.log(data["Search"]);
                 setMovies(data["Search"]);
             } catch (err) {
                 setError(err.message);
@@ -226,6 +272,10 @@ export default function App() {
         fetchMovies();
     }, [query]);
 
+    function SelectMovieHandler(id) {
+        setSelectedMovieID((prevID) => (id === prevID ? null : id));
+    }
+
     return (
         <>
             <NavBar>
@@ -242,13 +292,27 @@ export default function App() {
 
             <Main>
                 <ListBox>
-                    {!loading && !error && <MoviesList movies={movies} />}
+                    {!loading && !error && (
+                        <MoviesList
+                            movies={movies}
+                            onSelectMovie={SelectMovieHandler}
+                        />
+                    )}
                     {loading && <h2 className="loader">Loading...</h2>}
                     {error && <h2 className="error">{error}</h2>}
                 </ListBox>
                 <ListBox>
-                    <WatchedMoviesSummary watched={watched} />
-                    <WatchedMoviesList watched={watched} />
+                    {selectedMovieID ? (
+                        <SelectedMovie
+                            movieID={selectedMovieID}
+                            onBackClick={SelectMovieHandler}
+                        />
+                    ) : (
+                        <>
+                            <WatchedMoviesSummary watched={watched} />
+                            <WatchedMoviesList watched={watched} />
+                        </>
+                    )}
                 </ListBox>
             </Main>
         </>
