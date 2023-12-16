@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { key } from "./key";
 
 const tempMovieData = [
     {
@@ -188,7 +189,6 @@ export default function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const [query, setQuery] = useState("");
-
     // useEffect(() => {
     //     console.log("use effect called");
     // }, [query]);
@@ -200,14 +200,15 @@ export default function App() {
                 setError(false);
                 setLoading(true);
                 let res = await fetch(
-                    `http://localhost:3000/movies?search=${query}`
+                    `http://www.omdbapi.com/?apikey=${key}&s=${query}`
                 );
                 let data = await res.json();
                 if (data.length == 0) {
                     setMovies([]);
                     throw new Error("no movies available");
                 }
-                setMovies(data);
+                // console.log(data);
+                setMovies(data["Search"]);
             } catch (err) {
                 setError(err.message);
                 console.log(err);
@@ -218,10 +219,10 @@ export default function App() {
 
         if (query.length < 3) {
             setMovies([]);
-            setError("");
+            setError(false);
             return;
         }
-        
+
         fetchMovies();
     }, [query]);
 
