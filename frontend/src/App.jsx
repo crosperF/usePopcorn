@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
     {
@@ -46,8 +46,8 @@ const average = (arr) =>
     arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 // Top section
-function SearchBar() {
-    const [query, setQuery] = useState("");
+function SearchBar({ query, setQuery }) {
+    // const [query, setQuery] = useState("");
     return (
         <input
             className="search"
@@ -183,13 +183,57 @@ function WatchedMovie({ movie }) {
 }
 
 export default function App() {
-    const [movies, setMovies] = useState(tempMovieData);
+    const [movies, setMovies] = useState([]);
     const [watched, setWatched] = useState(tempWatchedData);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(false);
+    const [query, setQuery] = useState("");
+
+    // useEffect(() => {
+    //     console.log("use effect called");
+    // }, [query]);
+
+    useEffect(() => {
+        async function fetchMovies() {
+            try {
+                // TODO - error handling
+                setError(false);
+                setLoading(true);
+                let res = await fetch(
+                    `http://localhost:3000/movies?search=${query}`
+                );
+                let data = await res.json();
+                if (data.length == 0) {
+                    setMovies([]);
+                    throw new Error("no movies available");
+                }
+                setMovies(data);
+            } catch (err) {
+                setError(err.message);
+                console.log(err);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        if (query.length < 3) {
+            setMovies([]);
+            setError("");
+            return;
+        }
+        
+        fetchMovies();
+    }, [query]);
 
     return (
         <>
             <NavBar>
-                <SearchBar />
+                <SearchBar
+                    query={query}
+                    setQuery={(val) => {
+                        setQuery(val);
+                    }}
+                />
                 <p className="num-results">
                     Found <strong>{movies.length}</strong> results
                 </p>
@@ -197,7 +241,9 @@ export default function App() {
 
             <Main>
                 <ListBox>
-                    <MoviesList movies={movies} />
+                    {!loading && !error && <MoviesList movies={movies} />}
+                    {loading && <h2 className="loader">Loading...</h2>}
+                    {error && <h2 className="error">{error}</h2>}
                 </ListBox>
                 <ListBox>
                     <WatchedMoviesSummary watched={watched} />
