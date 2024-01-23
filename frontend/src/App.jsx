@@ -107,7 +107,9 @@ function Movie({ movie, onSelectMovie }) {
 function WatchedMoviesSummary({ watched }) {
     const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
     const avgUserRating = average(watched.map((movie) => movie.userRating));
-    const avgRuntime = average(watched.map((movie) => movie.runtime));
+    const avgRuntime = average(
+        watched.map((movie) => Number(movie.runtime.split(" ")[0]))
+    );
 
     return (
         <div className="summary">
@@ -115,19 +117,19 @@ function WatchedMoviesSummary({ watched }) {
             <div>
                 <p>
                     <span>#️⃣</span>
-                    <span>{watched.length} movies</span>
+                    <span>{watched.length}</span>
                 </p>
                 <p>
                     <span>⭐️</span>
-                    <span>{avgImdbRating}</span>
+                    <span>{avgImdbRating.toFixed(1)}</span>
                 </p>
                 <p>
                     <span>🌟</span>
-                    <span>{avgUserRating}</span>
+                    <span>{avgUserRating.toFixed(1)}</span>
                 </p>
                 <p>
                     <span>⏳</span>
-                    <span>{avgRuntime} min</span>
+                    <span>{avgRuntime.toFixed(1)} mins</span>
                 </p>
             </div>
         </div>
@@ -146,9 +148,9 @@ function WatchedMoviesList({ watched }) {
 
 function WatchedMovie({ movie }) {
     return (
-        <li>
-            <img src={movie.Poster} alt={`${movie.Title} poster`} />
-            <h3>{movie.Title}</h3>
+        <li key={movie.title}>
+            <img src={movie.poster} alt={`${movie.title} poster`} />
+            <h3>{movie.title}</h3>
             <div>
                 <p>
                     <span>⭐️</span>
@@ -167,7 +169,7 @@ function WatchedMovie({ movie }) {
     );
 }
 
-function SelectedMovie({ movieID, onBackClick }) {
+function SelectedMovie({ movieID, onBackClick, addWatchedHandler }) {
     const [movie, setMovie] = useState({});
     const [loading, setLoading] = useState(false);
 
@@ -183,6 +185,14 @@ function SelectedMovie({ movieID, onBackClick }) {
         Released: released,
         Runtime: runtime,
     } = movie;
+
+    const watched_data = {
+        poster,
+        title,
+        imdbRating,
+        userRating: 10,
+        runtime,
+    };
 
     useEffect(() => {
         async function fetchMovieDetail(id) {
@@ -222,7 +232,17 @@ function SelectedMovie({ movieID, onBackClick }) {
             </header>
             <section>
                 <div className="rating">
-                    <StarRating maxRating={10} size={24} onSetRating={() => {}} />
+                    <StarRating
+                        maxRating={10}
+                        size={24}
+                        onSetRating={() => {}}
+                    />
+                    <button
+                        onClick={() => addWatchedHandler(watched_data)}
+                        className="btn-add"
+                    >
+                        Add to watched
+                    </button>
                 </div>
                 <p>
                     <em>{plot}</em>
@@ -236,7 +256,7 @@ function SelectedMovie({ movieID, onBackClick }) {
 
 export default function App() {
     const [movies, setMovies] = useState([]);
-    const [watched, setWatched] = useState(tempWatchedData);
+    const [watched, setWatched] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const [query, setQuery] = useState("wars");
@@ -280,6 +300,10 @@ export default function App() {
         setSelectedMovieID((prevID) => (id === prevID ? null : id));
     }
 
+    function addWatchedHandler(newMovie) {
+        setWatched((prev) => [...prev, newMovie]);
+    }
+
     return (
         <>
             <NavBar>
@@ -310,6 +334,7 @@ export default function App() {
                         <SelectedMovie
                             movieID={selectedMovieID}
                             onBackClick={SelectMovieHandler}
+                            addWatchedHandler={addWatchedHandler}
                         />
                     ) : (
                         <>
